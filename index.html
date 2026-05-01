@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>One Piece Trivial: Ruta hacia el One Piece</title>
+  <style>
+    :root {
+      --bg: #0e3a53;
+      --paper: #f3ddb0;
+      --paper-dark: #d5a45f;
+      --wood: #7b4a24;
+      --wood-dark: #4c2b14;
+      --ink: #2b1d10;
+      --red: #d94a38;
+      --blue: #2f80d1;
+      --black: #30343f;
+      --purple: #7c4dd6;
+      --gold: #e1aa27;
+      --green: #3b9c63;
+      --special: #f7d66b;
+      --white: #fff8e7;
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,.12), transparent 25%),
+        linear-gradient(135deg, #0e3a53, #082535 55%, #061923);
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .hero, .card, .modal-card {
+      background: linear-gradient(180deg, var(--paper), #f7e8c7);
+      border: 4px solid var(--wood);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      min-height: calc(100vh - 36px);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: "☠️ ⚓ 🧭 🏴‍☠️";
+      position: absolute;
+      font-size: clamp(44px, 12vw, 130px);
+      opacity: .08;
+      transform: rotate(-12deg);
+      inset: 8% auto auto -4%;
+      white-space: nowrap;
+    }
+
+    h1, h2, h3 { margin: 0 0 14px; }
+    h1 { font-size: clamp(2rem, 7vw, 4.8rem); line-height: 1; }
+    h2 { font-size: clamp(1.6rem, 5vw, 2.6rem); }
+    p { font-size: clamp(1rem, 2.5vw, 1.15rem); line-height: 1.45; }
+
+    .btn {
+      border: 0;
+      border-radius: 18px;
+      padding: 14px 20px;
+      background: linear-gradient(180deg, #d33a2c, #9e241a);
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #5e150f, 0 10px 18px rgba(0,0,0,.25);
+      transition: transform .08s ease, filter .15s ease;
+      min-height: 52px;
+    }
+
+    .btn:hover { filter: brightness(1.05); }
+    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #5e150f; }
+    .btn.secondary { background: linear-gradient(180deg, #2f80d1, #1d4e83); box-shadow: 0 6px 0 #123250, 0 10px 18px rgba(0,0,0,.25); }
+    .btn.wood { background: linear-gradient(180deg, #9b632e, #5b3519); box-shadow: 0 6px 0 #321d0e, 0 10px 18px rgba(0,0,0,.25); }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .card {
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 3px solid var(--wood);
+      border-radius: 14px;
+      padding: 12px;
+      background: var(--white);
+      color: var(--ink);
+    }
+
+    .player-form {
+      display: grid;
+      grid-template-columns: 1fr 130px;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .top-bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .turn-box, .dice-box {
+      background: var(--white);
+      border: 3px solid var(--wood);
+      border-radius: 18px;
+      padding: 12px;
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .dice {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .board-wrap {
+      background: rgba(255,248,231,.5);
+      border: 4px solid var(--wood);
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(44px, 1fr));
+      gap: 8px;
+    }
+
+    .cell {
+      aspect-ratio: 1 / 1;
+      min-height: 48px;
+      border-radius: 18px;
+      border: 3px solid rgba(0,0,0,.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: white;
+      font-weight: 900;
+      box-shadow: inset 0 -8px 0 rgba(0,0,0,.13);
+      overflow: hidden;
+    }
+
+    .cell .num {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      font-size: .65rem;
+      opacity: .75;
+    }
+
+    .cell .icon { font-size: clamp(1.1rem, 3vw, 1.6rem); }
+    .cell.tripulacion { background: var(--red); }
+    .cell.historia { background: var(--blue); }
+    .cell.villanos { background: var(--black); }
+    .cell.poderes { background: var(--purple); }
+    .cell.live { background: var(--gold); color: #2b1d10; }
+    .cell.mundo { background: var(--green); }
+    .cell.special { background: var(--special); color: #2b1d10; }
+    .cell.salida { background: var(--wood); }
+
+    .tokens {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: end;
+      gap: 2px;
+      max-width: 90%;
+    }
+
+    .token {
+      width: 19px;
+      height: 19px;
+      border-radius: 50%;
+      border: 2px solid white;
+      display: grid;
+      place-items: center;
+      font-size: .7rem;
+      background: #111;
+      box-shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+
+    .sidebar {
+      display: grid;
+      gap: 12px;
+    }
+
+    .player-card {
+      background: var(--white);
+      border: 3px solid var(--wood);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .player-card.active-player {
+      outline: 5px solid rgba(247,214,107,.9);
+    }
+
+    .player-name {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 900;
+      font-size: 1.05rem;
+    }
+
+    .badges {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .badge {
+      border-radius: 999px;
+      min-height: 28px;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(0,0,0,.25);
+      opacity: .25;
+      font-size: .9rem;
+    }
+
+    .badge.owned { opacity: 1; box-shadow: 0 0 0 3px rgba(255,255,255,.7) inset; }
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: .9rem;
+    }
+
+    .legend span {
+      background: rgba(255,255,255,.55);
+      border-radius: 12px;
+      padding: 7px;
+      font-weight: 800;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 20;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-card {
+      width: min(680px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .answer-btn {
+      border: 3px solid var(--wood);
+      background: var(--white);
+      border-radius: 18px;
+      min-height: 64px;
+      padding: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .answer-btn.correct { background: #baf0c1; }
+    .answer-btn.wrong { background: #f6b1a8; }
+
+    .feedback {
+      font-weight: 900;
+      font-size: 1.15rem;
+      min-height: 32px;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 900px) {
+      .game-layout { grid-template-columns: 1fr; }
+      .sidebar { grid-template-columns: 1fr 1fr; }
+      .top-bar { grid-template-columns: 1fr auto; }
+      .top-bar .btn { grid-column: span 2; }
+    }
+
+    @media (max-width: 620px) {
+      .app { padding: 10px; }
+      .hero, .card, .modal-card { border-width: 3px; border-radius: 18px; }
+      .player-form { grid-template-columns: 1fr; }
+      .board { grid-template-columns: repeat(6, minmax(38px, 1fr)); gap: 5px; }
+      .cell { border-radius: 12px; min-height: 40px; border-width: 2px; }
+      .cell .num { font-size: .55rem; top: 2px; left: 4px; }
+      .token { width: 15px; height: 15px; font-size: .55rem; border-width: 1px; }
+      .sidebar { grid-template-columns: 1fr; }
+      .legend { grid-template-columns: 1fr; }
+      .answers { grid-template-columns: 1fr; }
+      .top-bar { grid-template-columns: 1fr; }
+      .top-bar .btn { grid-column: auto; }
+      .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section id="startScreen" class="screen active">
+      <div class="hero">
+        <div>
+          <h1>One Piece Trivial</h1>
+          <h2>Ruta hacia el One Piece</h2>
+          <p>Reúne las 6 medallas pirata, supera el reto final y demuestra que tu tripulación está lista para zarpar.</p>
+          <div class="button-row">
+            <button class="btn" id="newGameBtn">Nueva partida</button>
+            <button class="btn secondary" id="continueBtn">Continuar partida</button>
+            <button class="btn wood" id="howBtn">Cómo jugar</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="setupScreen" class="screen">
+      <div class="card">
+        <h2>Elige tu tripulación</h2>
+        <label for="playerCount">Número de jugadores</label>
+        <select id="playerCount">
+          <option value="1">1 jugador</option>
+          <option value="2">2 jugadores</option>
+          <option value="3">3 jugadores</option>
+          <option value="4">4 jugadores</option>
+        </select>
+        <div id="playerInputs" class="setup-grid"></div>
+        <div class="button-row">
+          <button class="btn" id="startGameBtn">Empezar aventura</button>
+          <button class="btn wood" id="backStartBtn">Volver</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen">
+      <div class="top-bar">
+        <div class="turn-box" id="turnBox">Turno de...</div>
+        <div class="dice-box"><div class="dice" id="diceValue">🎲</div></div>
+        <button class="btn" id="rollBtn">Tirar dado</button>
+      </div>
+      <div class="game-layout">
+        <main class="board-wrap">
+          <h2 id="levelTitle">Nivel 1: East Blue</h2>
+          <div id="board" class="board"></div>
+        </main>
+        <aside class="sidebar">
+          <div class="card">
+            <h3>Jugadores</h3>
+            <div id="playersPanel"></div>
+          </div>
+          <div class="card">
+            <h3>Leyenda</h3>
+            <div class="legend">
+              <span>🔴 Tripulación</span>
+              <span>🔵 Historia</span>
+              <span>⚫ Villanos</span>
+              <span>🟣 Poderes</span>
+              <span>🟡 Live action</span>
+              <span>🟢 Mundo pirata</span>
+              <span>🏅 Medalla</span>
+              <span>🌪️ Especial</span>
+            </div>
+          </div>
+          <button class="btn wood" id="saveExitBtn">Guardar y salir</button>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-card" id="modalCard"></div>
+  </div>
+
+  <script>
+    const categories = {
+      tripulacion: { name: 'Tripulación', icon: '🔴', color: 'var(--red)' },
+      historia: { name: 'Historia y aventuras', icon: '🔵', color: 'var(--blue)' },
+      villanos: { name: 'Villanos y rivales', icon: '⚫', color: 'var(--black)' },
+      poderes: { name: 'Frutas del diablo y poderes', icon: '🟣', color: 'var(--purple)' },
+      live: { name: 'Live action', icon: '🟡', color: 'var(--gold)' },
+      mundo: { name: 'Mundo pirata', icon: '🟢', color: 'var(--green)' }
+    };
+
+    const avatarOptions = ['👒', '⚔️', '🧭', '☠️', '⚓', '🛞'];
+
+    const boardCells = [
+      { type: 'salida', label: 'Salida', icon: '🏁' },
+      { type: 'category', category: 'tripulacion', icon: '🔴' },
+      { type: 'category', category: 'historia', icon: '🔵' },
+      { type: 'category', category: 'villanos', icon: '⚫' },
+      { type: 'special', effect: 'again', icon: '🌬️' },
+      { type: 'category', category: 'poderes', icon: '🟣' },
+      { type: 'category', category: 'live', icon: '🟡' },
+      { type: 'category', category: 'mundo', icon: '🟢' },
+      { type: 'medal', category: 'tripulacion', icon: '🏅' },
+      { type: 'special', effect: 'storm', icon: '🌪️' },
+      { type: 'category', category: 'historia', icon: '🔵' },
+      { type: 'category', category: 'villanos', icon: '⚫' },
+      { type: 'category', category: 'poderes', icon: '🟣' },
+      { type: 'medal', category: 'historia', icon: '🏅' },
+      { type: 'special', effect: 'port', icon: '⚓' },
+      { type: 'category', category: 'live', icon: '🟡' },
+      { type: 'category', category: 'mundo', icon: '🟢' },
+      { type: 'category', category: 'tripulacion', icon: '🔴' },
+      { type: 'medal', category: 'villanos', icon: '🏅' },
+      { type: 'special', effect: 'logpose', icon: '🧭' },
+      { type: 'category', category: 'villanos', icon: '⚫' },
+      { type: 'category', category: 'poderes', icon: '🟣' },
+      { type: 'category', category: 'live', icon: '🟡' },
+      { type: 'medal', category: 'poderes', icon: '🏅' },
+      { type: 'special', effect: 'treasure', icon: '💰' },
+      { type: 'category', category: 'mundo', icon: '🟢' },
+      { type: 'category', category: 'tripulacion', icon: '🔴' },
+      { type: 'category', category: 'historia', icon: '🔵' },
+      { type: 'medal', category: 'live', icon: '🏅' },
+      { type: 'special', effect: 'storm', icon: '🌪️' },
+      { type: 'category', category: 'poderes', icon: '🟣' },
+      { type: 'category', category: 'live', icon: '🟡' },
+      { type: 'category', category: 'mundo', icon: '🟢' },
+      { type: 'medal', category: 'mundo', icon: '🏅' },
+      { type: 'special', effect: 'challenge', icon: '🏴‍☠️' },
+      { type: 'category', category: 'tripulacion', icon: '🔴' }
+    ];
+
+    const questions = [
+      {cat:'tripulacion', q:'¿Qué objeto entrega Shanks a Luffy cuando era niño?', a:['Una espada','Un sombrero de paja','Un mapa del tesoro','Una brújula'], c:1},
+      {cat:'tripulacion', q:'¿Cuál es el sueño de Zoro?', a:['Ser el mejor espadachín del mundo','Encontrar el One Piece','Ser capitán pirata','Ser el más rápido del mar'], c:0},
+      {cat:'tripulacion', q:'¿Qué habilidad especial tiene Usopp?', a:['Es muy fuerte','Tiene poderes mágicos','Es un gran tirador con tirachinas','Puede volar'], c:2},
+      {cat:'tripulacion', q:'¿Por qué Nami se une inicialmente a la tripulación?', a:['Para hacerse famosa','Para robar dinero a los piratas','Para ser pirata desde siempre','Para buscar a su familia'], c:1},
+      {cat:'tripulacion', q:'¿Qué quiere conseguir Sanji en su vida?', a:['Ser capitán','Encontrar el All Blue','Ser el más fuerte','Vengar a su familia'], c:1},
+
+      {cat:'historia', q:'¿En qué pueblo empieza la historia de Luffy?', a:['Loguetown','Shells Town','Foosha Village','Orange Town'], c:2},
+      {cat:'historia', q:'¿Quién es el primer enemigo importante de Luffy?', a:['Arlong','Buggy','Alvida','Kuro'], c:2},
+      {cat:'historia', q:'¿Dónde conoce Luffy a Zoro?', a:['En un barco','En una base de la Marina','En una isla desierta','En una taberna'], c:1},
+      {cat:'historia', q:'¿Qué pirata controla el pueblo de Nami?', a:['Buggy','Kuro','Don Krieg','Arlong'], c:3},
+      {cat:'historia', q:'¿Qué hace Luffy para derrotar a Arlong?', a:['Usa una espada','Lo engaña','Se escapa','Destruye el edificio donde está luchando'], c:3},
+
+      {cat:'villanos', q:'¿Qué parte del cuerpo puede separar Buggy gracias a su poder?', a:['Solo los brazos','Solo la cabeza','Todo su cuerpo en partes','Solo las piernas'], c:2},
+      {cat:'villanos', q:'¿Quién es el capitán de los piratas del Gato Negro?', a:['Arlong','Kuro','Buggy','Krieg'], c:1},
+      {cat:'villanos', q:'¿Qué arma principal usa Don Krieg?', a:['Espadas','Magia','Armas ocultas y armadura pesada','Pistolas normales'], c:2},
+      {cat:'villanos', q:'¿Qué tipo de pez es Arlong?', a:['Tiburón','Pulpo','Pez espada','Pez sierra'], c:3},
+      {cat:'villanos', q:'¿Qué característica define a Kuro?', a:['Es muy lento','Tiene poderes eléctricos','Usa gafas redondas y es muy calculador','Tiene alas'], c:2},
+
+      {cat:'poderes', q:'¿Qué poder obtiene Luffy al comer su fruta?', a:['Volverse invisible','Convertirse en fuego','Controlar el agua','Estirar su cuerpo como goma'], c:3},
+      {cat:'poderes', q:'¿Cuál es la debilidad principal de los usuarios de frutas del diablo?', a:['El fuego','El agua del mar','El viento','La oscuridad'], c:1},
+      {cat:'poderes', q:'¿Qué tipo de fruta tiene Buggy?', a:['Zoan','Logia','Paramecia que separa su cuerpo','Ninguna'], c:2},
+      {cat:'poderes', q:'¿Qué ocurre si un usuario cae al mar?', a:['Se vuelve más fuerte','Se cura','Pierde la memoria','No puede moverse ni nadar'], c:3},
+      {cat:'poderes', q:'¿Qué característica tienen muchas frutas del diablo?', a:['Son dulces','Son invisibles','Tienen formas normales','Tienen formas extrañas con patrones en espiral'], c:3},
+
+      {cat:'live', q:'¿Quién interpreta a Luffy en el live action?', a:['Mackenyu','Jacob Romero Gibson','Iñaki Godoy','Taz Skylar'], c:2},
+      {cat:'live', q:'¿Qué actriz interpreta a Nami?', a:['Emily Rudd','Zendaya','Millie Bobby Brown','Ana de Armas'], c:0},
+      {cat:'live', q:'¿Quién interpreta a Zoro?', a:['Henry Cavill','Mackenyu','Tom Holland','Pedro Pascal'], c:1},
+      {cat:'live', q:'¿Cuántos episodios tiene la primera temporada del live action?', a:['6','10','12','8'], c:3},
+      {cat:'live', q:'¿Qué elemento se mantiene en el live action?', a:['El tono oscuro','El estilo de humor y aventura','No hay combates','Todo es realista'], c:1},
+
+      {cat:'mundo', q:'¿Cómo se llama la gran ruta donde navegan los piratas?', a:['Red Line','Calm Belt','Grand Line','Blue Sea'], c:2},
+      {cat:'mundo', q:'¿Quién persigue a los piratas como autoridad?', a:['Los reyes','Los marines / la Marina','Los comerciantes','Los pescadores'], c:1},
+      {cat:'mundo', q:'¿Qué es el One Piece?', a:['Un arma','Un barco','Un mapa','El tesoro del Rey de los Piratas'], c:3},
+      {cat:'mundo', q:'¿Qué símbolo representa a cada tripulación?', a:['Una bandera pirata, también llamada Jolly Roger','Un escudo','Un mapa','Un anillo'], c:0},
+      {cat:'mundo', q:'¿Qué indica la recompensa de un pirata?', a:['Su riqueza','Su velocidad','Lo peligroso que es para el Gobierno','Su edad'], c:2}
+    ];
+
+    let state = null;
+    let pendingExtraTurn = false;
+
+    const $ = selector => document.querySelector(selector);
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      $('#' + id).classList.add('active');
+    }
+
+    function showModal(html) {
+      $('#modalCard').innerHTML = html;
+      $('#modal').classList.add('active');
+    }
+
+    function closeModal() {
+      $('#modal').classList.remove('active');
+      $('#modalCard').innerHTML = '';
+    }
+
+    function initPlayerInputs() {
+      const count = Number($('#playerCount').value);
+      const container = $('#playerInputs');
+      container.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const div = document.createElement('div');
+        div.className = 'player-form';
+        div.innerHTML = `
+          <div>
+            <label>Jugador ${i + 1}</label>
+            <input id="playerName${i}" value="Jugador ${i + 1}" maxlength="14" />
+          </div>
+          <div>
+            <label>Ficha</label>
+            <select id="playerAvatar${i}">
+              ${avatarOptions.map((a, idx) => `<option value="${a}" ${idx === i ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+          </div>
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function newState() {
+      const count = Number($('#playerCount').value);
+      const players = [];
+      for (let i = 0; i < count; i++) {
+        players.push({
+          name: $('#playerName' + i).value.trim() || `Jugador ${i + 1}`,
+          avatar: $('#playerAvatar' + i).value,
+          position: 0,
+          points: 0,
+          medals: {}
+        });
+      }
+      state = { players, current: 0, dice: null, usedQuestions: {}, level: 'East Blue', finished: false };
+      saveGame();
+      renderGame();
+      showScreen('gameScreen');
+    }
+
+    function saveGame() {
+      if (state) localStorage.setItem('onePieceTrivialV1', JSON.stringify(state));
+    }
+
+    function loadGame() {
+      const saved = localStorage.getItem('onePieceTrivialV1');
+      if (!saved) {
+        showModal(`<h2>No hay partida guardada</h2><p>Empieza una nueva aventura con tu tripulación.</p><button class="btn" onclick="closeModal()">Aceptar</button>`);
+        return;
+      }
+      state = JSON.parse(saved);
+      renderGame();
+      showScreen('gameScreen');
+    }
+
+    function renderGame() {
+      renderBoard();
+      renderPlayers();
+      const p = state.players[state.current];
+      $('#turnBox').textContent = `Turno de ${p.avatar} ${p.name}`;
+      $('#diceValue').textContent = state.dice ? state.dice : '🎲';
+      $('#rollBtn').disabled = false;
+      saveGame();
+    }
+
+    function renderBoard() {
+      const board = $('#board');
+      board.innerHTML = '';
+      boardCells.forEach((cell, index) => {
+        const div = document.createElement('div');
+        const className = cell.type === 'category' || cell.type === 'medal' ? cell.category : cell.type;
+        div.className = `cell ${className} ${cell.type === 'special' || cell.type === 'medal' ? 'special' : ''}`;
+        div.innerHTML = `<span class="num">${index + 1}</span><span class="icon">${cell.icon}</span><div class="tokens"></div>`;
+        const tokens = div.querySelector('.tokens');
+        state.players.forEach((p, pi) => {
+          if (p.position === index) {
+            const token = document.createElement('span');
+            token.className = 'token';
+            token.textContent = p.avatar;
+            token.title = p.name;
+            tokens.appendChild(token);
+          }
+        });
+        board.appendChild(div);
+      });
+    }
+
+    function renderPlayers() {
+      const panel = $('#playersPanel');
+      panel.innerHTML = '';
+      state.players.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = `player-card ${i === state.current ? 'active-player' : ''}`;
+        const badges = Object.keys(categories).map(cat => {
+          const owned = p.medals[cat] ? 'owned' : '';
+          return `<span class="badge ${owned}" style="background:${categories[cat].color}">${categories[cat].icon}</span>`;
+        }).join('');
+        card.innerHTML = `
+          <div class="player-name"><span>${p.avatar} ${p.name}</span><span>${p.points} pts</span></div>
+          <div class="badges">${badges}</div>
+        `;
+        panel.appendChild(card);
+      });
+    }
+
+    function rollDice() {
+      $('#rollBtn').disabled = true;
+      let rolls = 0;
+      const anim = setInterval(() => {
+        $('#diceValue').textContent = Math.floor(Math.random() * 6) + 1;
+        rolls++;
+        if (rolls >= 10) {
+          clearInterval(anim);
+          const result = Math.floor(Math.random() * 6) + 1;
+          state.dice = result;
+          $('#diceValue').textContent = result;
+          movePlayer(result);
+        }
+      }, 80);
+    }
+
+    function movePlayer(steps) {
+      const p = state.players[state.current];
+      p.position = (p.position + steps) % boardCells.length;
+      renderGame();
+      setTimeout(() => handleCell(boardCells[p.position]), 350);
+    }
+
+    function handleCell(cell) {
+      if (cell.type === 'category') return askQuestion(cell.category, false, false);
+      if (cell.type === 'medal') return askQuestion(cell.category, true, false);
+      if (cell.type === 'special') return handleSpecial(cell.effect);
+      endTurn();
+    }
+
+    function handleSpecial(effect) {
+      const p = state.players[state.current];
+      if (effect === 'storm') {
+        p.position = (p.position - 2 + boardCells.length) % boardCells.length;
+        renderGame();
+        showModal(`<h2>🌪️ Tormenta</h2><p>${p.name} retrocede 2 casillas.</p><button class="btn" onclick="closeModal(); endTurn();">Continuar</button>`);
+      } else if (effect === 'again') {
+        pendingExtraTurn = true;
+        showModal(`<h2>🌬️ Viento favorable</h2><p>${p.name} podrá tirar otra vez.</p><button class="btn" onclick="closeModal(); endTurn();">Continuar</button>`);
+      } else if (effect === 'treasure') {
+        p.points += 10;
+        renderGame();
+        showModal(`<h2>💰 Tesoro</h2><p>${p.name} gana 10 puntos.</p><button class="btn" onclick="closeModal(); endTurn();">Continuar</button>`);
+      } else if (effect === 'challenge') {
+        const cat = randomCategory();
+        askQuestion(cat, false, true);
+      } else if (effect === 'logpose') {
+        let next = p.position;
+        do { next = (next + 1) % boardCells.length; } while (boardCells[next].type !== 'category');
+        p.position = next;
+        renderGame();
+        showModal(`<h2>🧭 Log Pose</h2><p>Avanzas hasta una casilla de ${categories[boardCells[next].category].name}.</p><button class="btn" onclick="closeModal(); askQuestion('${boardCells[next].category}', false, false);">Responder</button>`);
+      } else if (effect === 'port') {
+        const buttons = Object.keys(categories).map(cat => `<button class="answer-btn" onclick="closeModal(); askQuestion('${cat}', false, false);">${categories[cat].icon} ${categories[cat].name}</button>`).join('');
+        showModal(`<h2>⚓ Puerto seguro</h2><p>Elige una categoría.</p><div class="answers">${buttons}</div>`);
+      }
+    }
+
+    function randomCategory() {
+      const keys = Object.keys(categories);
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    function getQuestion(cat) {
+      const pool = questions.filter(q => q.cat === cat);
+      if (!state.usedQuestions[cat]) state.usedQuestions[cat] = [];
+      let available = pool.filter(q => !state.usedQuestions[cat].includes(q.q));
+      if (available.length === 0) {
+        state.usedQuestions[cat] = [];
+        available = pool;
+      }
+      const q = available[Math.floor(Math.random() * available.length)];
+      state.usedQuestions[cat].push(q.q);
+      return q;
+    }
+
+    function askQuestion(cat, isMedal, isChallenge) {
+      const q = getQuestion(cat);
+      const p = state.players[state.current];
+      const title = isChallenge ? '🏴‍☠️ Desafío pirata' : isMedal ? `🏅 Medalla de ${categories[cat].name}` : `${categories[cat].icon} ${categories[cat].name}`;
+      const answers = q.a.map((ans, i) => `<button class="answer-btn" onclick="answerQuestion(${i}, ${q.c}, '${cat}', ${isMedal}, ${isChallenge})"><strong>${String.fromCharCode(65+i)})</strong> ${ans}</button>`).join('');
+      showModal(`
+        <h2>${title}</h2>
+        <p><strong>${p.avatar} ${p.name}</strong>, responde:</p>
+        <h3>${q.q}</h3>
+        <div class="answers">${answers}</div>
+        <div class="feedback" id="feedback"></div>
+      `);
+    }
+
+    function answerQuestion(selected, correct, cat, isMedal, isChallenge) {
+      const buttons = document.querySelectorAll('.answer-btn');
+      buttons.forEach((b, i) => {
+        b.disabled = true;
+        if (i === correct) b.classList.add('correct');
+        if (i === selected && selected !== correct) b.classList.add('wrong');
+      });
+      const p = state.players[state.current];
+      const ok = selected === correct;
+      let msg = '';
+      if (ok) {
+        const points = isChallenge ? 20 : 10;
+        p.points += points;
+        msg = `¡Correcto! ${p.name} gana ${points} puntos.`;
+        if (isMedal && !p.medals[cat]) {
+          p.medals[cat] = true;
+          msg += ` Además consigue la medalla de ${categories[cat].name}.`;
+        } else if (isMedal && p.medals[cat]) {
+          msg += ` Ya tenía esta medalla.`;
+        }
+      } else {
+        msg = `No era esa. La respuesta correcta era la ${String.fromCharCode(65 + correct)}.`;
+      }
+      $('#feedback').textContent = msg;
+      renderPlayers();
+      const allMedals = Object.keys(categories).every(c => p.medals[c]);
+      const nextButton = allMedals ? `<button class="btn" onclick="startFinalChallenge()">Ir al reto final</button>` : `<button class="btn" onclick="closeModal(); endTurn();">Continuar</button>`;
+      $('#modalCard').insertAdjacentHTML('beforeend', `<div class="button-row">${nextButton}</div>`);
+      saveGame();
+    }
+
+    function startFinalChallenge() {
+      const p = state.players[state.current];
+      const selected = [...questions].sort(() => Math.random() - 0.5).slice(0,5);
+      let index = 0;
+      let score = 0;
+
+      window.finalAnswer = function(choice) {
+        if (choice === selected[index].c) score++;
+        index++;
+        renderFinalQuestion();
+      };
+
+      function renderFinalQuestion() {
+        if (index >= selected.length) {
+          if (score >= 4) {
+            state.finished = true;
+            localStorage.removeItem('onePieceTrivialV1');
+            showModal(`<h2>🏆 ¡Victoria!</h2><p>${p.avatar} ${p.name} ha superado el reto final con ${score}/5 aciertos.</p><p>¡La tripulación está lista para entrar en la Grand Line!</p><button class="btn" onclick="location.reload()">Nueva partida</button>`);
+          } else {
+            showModal(`<h2>Reto no superado</h2><p>${p.name} ha conseguido ${score}/5 aciertos. Necesita 4 para ganar.</p><button class="btn" onclick="closeModal(); endTurn();">Volver al tablero</button>`);
+          }
+          return;
+        }
+        const q = selected[index];
+        const answers = q.a.map((ans, i) => `<button class="answer-btn" onclick="finalAnswer(${i})"><strong>${String.fromCharCode(65+i)})</strong> ${ans}</button>`).join('');
+        showModal(`<h2>Reto final East Blue</h2><p>Pregunta ${index + 1} de 5 · Aciertos: ${score}</p><h3>${q.q}</h3><div class="answers">${answers}</div>`);
+      }
+      renderFinalQuestion();
+    }
+
+    function endTurn() {
+      if (!state) return;
+      if (!pendingExtraTurn) state.current = (state.current + 1) % state.players.length;
+      pendingExtraTurn = false;
+      state.dice = null;
+      renderGame();
+    }
+
+    function howToPlay() {
+      showModal(`
+        <h2>Cómo jugar</h2>
+        <p>Podéis jugar en modo individual o de 2 a 4 personas en el mismo dispositivo. En cada turno se tira el dado, se avanza por el tablero y se responde una pregunta.</p>
+        <p>Para ganar hay que conseguir las 6 medallas pirata y superar el reto final con 4 aciertos de 5.</p>
+        <button class="btn" onclick="closeModal()">Entendido</button>
+      `);
+    }
+
+    $('#newGameBtn').addEventListener('click', () => { initPlayerInputs(); showScreen('setupScreen'); });
+    $('#continueBtn').addEventListener('click', loadGame);
+    $('#howBtn').addEventListener('click', howToPlay);
+    $('#playerCount').addEventListener('change', initPlayerInputs);
+    $('#startGameBtn').addEventListener('click', newState);
+    $('#backStartBtn').addEventListener('click', () => showScreen('startScreen'));
+    $('#rollBtn').addEventListener('click', rollDice);
+    $('#saveExitBtn').addEventListener('click', () => { saveGame(); showScreen('startScreen'); });
+
+    initPlayerInputs();
+  </script>
+</body>
+</html>
